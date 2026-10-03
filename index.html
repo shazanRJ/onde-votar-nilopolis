@@ -17,8 +17,10 @@
   p.lead { color: var(--muted); margin: 0 0 18px; line-height: 1.45; }
   .wrap { max-width: 880px; margin: 0 auto; padding: 0 20px 40px; }
   .search { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; }
-  input, select, button { font: inherit; border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: var(--text); padding: 12px 14px; }
-  button { background: var(--acc); color: #06221e; font-weight: 700; cursor: pointer; border: 0; }
+  input, select, button { font: inherit; border-radius: 10px; border: 1px solid #8ea0b5; background: #ffffff; color: #0d1116; padding: 14px 16px; font-size: 1.15rem; font-weight: 650; }
+  input::placeholder { color: #3d4b5c; opacity: 1; font-weight: 600; }
+  input:focus { outline: 3px solid var(--acc); border-color: #0d1116; }
+  button { background: var(--acc); color: #06221e; font-weight: 800; cursor: pointer; border: 0; font-size: 1.15rem; }
   button:hover { filter: brightness(1.05); }
   .hint { color: var(--muted); font-size: .9rem; margin: 10px 0 16px; }
   .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px 16px 12px; margin: 0 0 12px; }
@@ -50,7 +52,7 @@
   </form>
   <div class="hint">Pode preencher só a seção. Zona vale apenas 201 ou 221. Se o primeiro número não for zona, o app busca as seções nas duas zonas.</div>
   <div id="out"></div>
-  <input id="q" placeholder="Filtrar o resultado por local, bairro ou endereço" aria-label="Filtro" style="width:100%; margin: 6px 0 14px;">
+  <input id="q" placeholder="Filtrar o resultado por local, bairro ou endereço" aria-label="Filtro" style="width:100%; margin: 6px 0 14px; font-size:1.15rem;">
   <section class="card" id="oficial">
     <h2>Não achou a seção? A pessoa consulta a própria</h2>
     <p class="addr">A confirmação oficial é individual. Cada eleitor vê zona, seção, local e endereço com os dados dele.</p>
