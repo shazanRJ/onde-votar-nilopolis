@@ -48,7 +48,9 @@
     <input id="secao" inputmode="numeric" placeholder="Seção" aria-label="Seção">
     <button type="submit">Buscar</button>
   </form>
-  <div class="hint">Também dá para buscar só pelo nome do local. A 201ª vai até a seção 247; a 221ª até a 207. Não existe seção 302.</div>
+  <div class="hint">Pode preencher só a seção. Zona vale apenas 201 ou 221. Se o primeiro número não for zona, o app busca as seções nas duas zonas.</div>
+  <div id="out"></div>
+  <input id="q" placeholder="Filtrar o resultado por local, bairro ou endereço" aria-label="Filtro" style="width:100%; margin: 6px 0 14px;">
   <section class="card" id="oficial">
     <h2>Não achou a seção? A pessoa consulta a própria</h2>
     <p class="addr">A confirmação oficial é individual. Cada eleitor vê zona, seção, local e endereço com os dados dele.</p>
@@ -59,8 +61,6 @@
     </ol>
     <p class="meta">Não dá para puxar a lista inteira por aí: uma consulta por pessoa. Use esta página quando já tiver zona e seção.</p>
   </section>
-  <input id="q" placeholder="Ou filtre pelo nome do local, bairro ou endereço" aria-label="Filtro" style="width:100%; margin-bottom:14px;">
-  <div id="out"></div>
   <footer>
     Cartórios: 201ª zona, Rua Pedro Álvares Cabral, 305, 2º andar, Prefeitura, Centro · 221ª zona, mesmo prédio, térreo.<br>
     Confirme no e-Título ou em <a href="https://www.tse.jus.br/servicos-eleitorais/autoatendimento-eleitoral#/">autoatendimento do TSE</a>. Votação: 4 de outubro, 8h às 17h.
@@ -74,8 +74,12 @@ function card(r) {
   const mudou = r.mudou ? '<span class="badge">local 2026</span>' : '';
   const local = r.mudou ? r.local_2026 : r.local;
   const nota = r.nota_2026 ? `<div class="meta">${r.nota_2026}. Em 2024 era: ${r.local} — ${r.endereco}, ${r.bairro}.</div>` : '';
-  const mapa = (r.lat && r.lon && !r.mudou) ? `<div class="meta"><a target="_blank" href="https://www.google.com/maps?q=${r.lat},${r.lon}">Abrir no mapa</a></div>` : '';
-  return `<article class="card"><h2>Zona ${r.zona} · Seção ${r.secao}${mudou}</h2><div class="meta">${r.agregada}${r.principal && r.principal !== '-1' ? ' · principal ' + r.principal : ''} · ${r.eleitores} eleitores (2024)</div><div class="addr"><strong>${local}</strong><br>${r.mudou ? '' : r.endereco + ' — ' + r.bairro + (r.cep ? ' · CEP ' + r.cep : '')}</div>${nota}${mapa}</article>`;
+  const enderecoMapa = r.mudou
+    ? `${r.local_2026}, Nilópolis, RJ`
+    : `${r.endereco}, ${r.bairro}, Nilópolis, RJ${r.cep ? ', ' + r.cep : ''}`;
+  const q = encodeURIComponent(enderecoMapa);
+  const mapa = `<div class="meta"><a target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${q}">ver no maps</a></div>`;
+  return `<article class="card"><h2>Zona ${r.zona} · Seção ${r.secao}${mudou}</h2><div class="meta">${r.agregada}${r.principal && r.principal !== '-1' ? ' · principal ' + r.principal : ''} · ${r.eleitores} eleitores (2024)</div><div class="addr"><strong>${local}</strong><br>${r.mudou ? 'Nilópolis, RJ' : r.endereco + ' — ' + r.bairro + (r.cep ? ' · CEP ' + r.cep : '')}</div>${nota}${mapa}</article>`;
 }
 function render(list) {
   if (!list.length) { out.innerHTML = '<div class="empty">Nenhuma seção encontrada. Confira zona e seção, ou use a consulta oficial acima (e-Título ou autoatendimento do TSE).</div>'; return; }
@@ -83,18 +87,30 @@ function render(list) {
 }
 document.getElementById("f").addEventListener("submit", (e) => {
   e.preventDefault();
-  const z = document.getElementById("zona").value.trim();
-  const s = document.getElementById("secao").value.trim();
+  const zRaw = document.getElementById("zona").value.trim();
+  const sRaw = document.getElementById("secao").value.trim();
+  const z = zRaw ? parseInt(zRaw, 10) : null;
+  const s = sRaw ? parseInt(sRaw, 10) : null;
+  const zonas = new Set(DATA.map(r => r.zona));
   let list = DATA;
-  if (z) list = list.filter(r => String(r.zona) === String(parseInt(z, 10)));
-  if (s) list = list.filter(r => String(r.secao) === String(parseInt(s, 10)));
+  // 201 e 221 são as únicas zonas. Se o primeiro número não for zona, trata os dois como seção.
+  if (z && zonas.has(z)) {
+    list = list.filter(r => r.zona === z);
+    if (s) list = list.filter(r => r.secao === s);
+  } else {
+    const secs = [z, s].filter(n => Number.isInteger(n));
+    list = list.filter(r => secs.includes(r.secao));
+  }
   render(list);
 });
+let last = [];
+const _render = render;
+render = function(list) { last = list; _render(list); };
 document.getElementById("q").addEventListener("input", (e) => {
   const q = e.target.value.trim().toLowerCase();
-  if (!q) { out.innerHTML = ''; return; }
-  const list = DATA.filter(r => (`${r.local} ${r.local_2026} ${r.endereco} ${r.bairro} ${r.zona} ${r.secao}`).toLowerCase().includes(q));
-  render(list);
+  if (!q) { _render(last); return; }
+  const list = last.filter(r => (`${r.local} ${r.local_2026} ${r.endereco} ${r.bairro} ${r.zona} ${r.secao}`).toLowerCase().includes(q));
+  _render(list);
 });
 </script>
 </body>
