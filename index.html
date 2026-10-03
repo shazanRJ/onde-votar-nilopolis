@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CCO JUANIL — Monitor Operacional</title>
+<!-- CCO_VER:20261001a -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#05070d;--line:rgba(0,229,255,.18);--cyan:#00e5ff;--lime:#b8ff3d;--amber:#ffb020;--red:#ff3b5c;--violet:#9b6bff;--muted:#b7c4d8;--text:#e8f4ff}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:Rajdhani,system-ui,sans-serif}
+body{background:radial-gradient(900px 400px at 8% -12%,rgba(0,229,255,.12),transparent 50%),#05070d}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.07;background-image:linear-gradient(rgba(0,229,255,.35) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,.35) 1px,transparent 1px);background-size:52px 52px}
+.wrap{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;padding:12px 16px 0;gap:10px}
+header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px}
+.filtros{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
+.filtros button{background:rgba(8,14,24,.9);border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:5px 12px;font:700 .85rem Rajdhani,sans-serif;letter-spacing:.08em;cursor:pointer}
+.filtros button.on{color:#05070d;background:var(--cyan);border-color:var(--cyan)}
+.brand b{font-family:Orbitron,sans-serif;font-size:clamp(1.25rem,2.2vw,1.85rem);letter-spacing:.12em;color:var(--cyan);text-shadow:0 0 18px rgba(0,229,255,.45)}
+.brand span{display:block;color:var(--muted);font-size:clamp(.78rem,1.1vw,.98rem);letter-spacing:.16em;text-transform:uppercase}
+.clock{font-family:"Share Tech Mono",monospace;font-size:clamp(1.6rem,3vw,2.35rem);color:var(--lime);text-align:right}
+.sub{color:var(--muted);font-size:clamp(.72rem,1vw,.88rem);text-align:right}
+.status-box{text-align:right;justify-self:end}
+.sit-mid{text-align:center;justify-self:center}
+.sit-mid .sit{align-items:center}
+.brand{justify-self:start}
+.sit{display:flex;flex-direction:column;align-items:flex-end;gap:2px;margin-bottom:4px}
+.sit small{color:var(--muted);letter-spacing:.12em;font-size:clamp(.72rem,1vw,.88rem);text-transform:uppercase}
+.pulse{font-family:Orbitron,sans-serif;font-size:clamp(1.05rem,2vw,1.35rem);letter-spacing:.18em;font-weight:800}
+.pulse.on{color:#6cff2b;text-shadow:0 0 10px #6cff2b,0 0 24px #3cff00;animation:blinkOn 1.1s ease-in-out infinite}
+.pulse.off{color:#ff2a4a;text-shadow:0 0 10px #ff2a4a,0 0 24px #ff0033;animation:blinkOff 1.1s ease-in-out infinite}
+@keyframes blinkOn{0%,100%{opacity:1;filter:brightness(1.2)}50%{opacity:.35;filter:brightness(.7)}}
+@keyframes blinkOff{0%,100%{opacity:1;filter:brightness(1.15)}50%{opacity:.3;filter:brightness(.65)}}
+
+.hist{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.hist input[type=date]{background:#0b1220;border:1px solid var(--line);color:var(--text);border-radius:8px;padding:5px 8px;font:600 .9rem Rajdhani,sans-serif}
+.hist button{background:rgba(8,14,24,.9);border:1px solid var(--line);color:var(--cyan);border-radius:8px;padding:5px 10px;font:700 .8rem Rajdhani,sans-serif;cursor:pointer;letter-spacing:.08em}
+.hist .tag{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:var(--amber)}
+.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+.kpi{background:rgba(8,14,24,.92);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.kpi .l{font-size:clamp(.78rem,1.05vw,.95rem);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.kpi .n{font-family:Orbitron,sans-serif;font-size:clamp(1.7rem,3vw,2.35rem)}
+.c-cyan{color:var(--cyan)}.c-lime{color:var(--lime)}.c-amber{color:var(--amber)}.c-red{color:var(--red)}.c-violet{color:var(--violet)}
+.grid{flex:1;min-height:0;display:grid;grid-template-columns:1.4fr .6fr;gap:12px}
+.panel{min-height:0;display:flex;flex-direction:column;background:rgba(8,14,24,.9);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.scroll{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch}
+.panel h3{font-family:Orbitron,sans-serif;font-size:clamp(.78rem,1.05vw,.95rem);letter-spacing:.14em;color:var(--cyan);padding:10px 12px;border-bottom:1px solid var(--line)}
+.feed{flex:1;min-height:0;overflow:hidden;position:relative}
+.feed-track{display:block;animation:feedUp 90s linear infinite}
+.feed:hover .feed-track{animation-play-state:paused}
+@keyframes feedUp{from{transform:translateY(0)}to{transform:translateY(-50%)}}
+
+.div-hist{margin:14px 12px 0;padding:10px 0 8px;border-top:1px solid rgba(0,229,255,.28);color:var(--amber);font-family:Orbitron,sans-serif;font-size:clamp(.72rem,1vw,.88rem);letter-spacing:.16em;text-transform:uppercase}
+.tbl-hist td{opacity:.92}
+
+.tbl{width:100%;border-collapse:collapse;font-size:clamp(1.02rem,1.4vw,1.22rem)}
+.tbl th{text-align:left;font-size:.82rem;letter-spacing:.12em;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#0b1220}
+.tbl td{padding:9px 10px;color:#f2f7ff;font-weight:600;border-bottom:1px solid rgba(255,255,255,.04)}
+.pill{display:inline-block;padding:3px 9px;border-radius:999px;font-size:.9rem;font-weight:700}
+.p-tl{background:rgba(0,229,255,.15);color:var(--cyan)}.p-ls{background:rgba(255,176,32,.16);color:var(--amber)}.p-cv{background:rgba(155,107,255,.18);color:var(--violet)}.p-ht{background:rgba(184,255,61,.14);color:var(--lime)}
+.p-ok{background:rgba(184,255,61,.14);color:var(--lime)}.p-run{background:rgba(0,229,255,.14);color:var(--cyan)}.p-loja{background:rgba(255,176,32,.16);color:var(--amber)}.p-off{background:rgba(255,59,92,.16);color:var(--red)}
+.ev{display:grid;grid-template-columns:92px 64px 1fr;gap:8px;align-items:center;padding:9px 12px;border-bottom:1px solid rgba(255,255,255,.04);font-size:clamp(1rem,1.25vw,1.14rem)}
+.ev .pl,.ev time{font-family:"Share Tech Mono",monospace;color:var(--cyan);font-size:inherit;letter-spacing:.04em}
+.ev small{color:var(--muted)}
+.e-bau b{color:var(--amber)}.e-fim b{color:var(--red)}.e-ini b{color:var(--lime)}.e-ret b{color:var(--violet)}.e-cli b{color:var(--cyan)}
+.ticker{flex:0 0 44px;display:flex;align-items:center;overflow:hidden;border-top:1px solid var(--line);background:rgba(0,20,32,.95)}
+.ticker-track{display:flex;white-space:nowrap;animation:slide 120s linear infinite}
+.ticker-track:hover{animation-play-state:paused}
+.tick{display:inline-flex;align-items:center;gap:10px;padding:0 28px;font-size:clamp(1.02rem,1.3vw,1.18rem)}
+.tick time{font-family:"Share Tech Mono",monospace;color:var(--cyan)}
+@keyframes slide{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.empty{padding:24px;text-align:center;color:var(--muted)}
+@media (orientation:portrait),(max-width:900px){
+  html,body{overflow:auto}
+  .wrap{height:auto;min-height:100%}
+  .kpis{grid-template-columns:repeat(3,1fr)}
+  .grid{grid-template-columns:1fr}
+  .panel{min-height:42vh}
+}
+@media (max-width:560px){.kpis{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div id="swapCover" style="display:none;position:fixed;inset:0;background:#05070d;z-index:99999"></div>
+<div class="wrap">
+  <header>
+    <div class="brand"><b>CCO JUANIL</b><span>Central de Controle Operacional</span></div>
+    <div class="sit-mid">
+      <div class="sit" id="situacao"><span class="pulse off">OFFLINE</span><small>OPERAÇÕES ENCERRADAS</small></div>
+    </div>
+    <div class="status-box">
+      <div class="filtros" id="filtros"></div>
+      <div class="clock" id="relogio">--:--:--</div>
+      <div class="sub" id="subtitulo">Carregando malha…</div>
+    </div>
+  </header>
+  <div class="kpis" id="kpis"></div>
+  <div class="grid">
+    <div class="panel">
+      <h3>Frota em movimento · Controle + Trucks</h3>
+      <div class="scroll">
+        <table class="tbl">
+          <thead><tr><th>Placa</th><th>OP</th><th>Motorista</th><th>Destino</th><th>Último evento</th><th>Hora</th><th>Status</th></tr></thead>
+          <tbody id="tbody"><tr><td colspan="7" class="empty">Sincronizando…</td></tr></tbody>
+        </table>
+        <div class="div-hist">Histórico do dia · finalizados</div>
+        <table class="tbl tbl-hist">
+          <thead><tr><th>Placa</th><th>OP</th><th>Motorista</th><th>Destino</th><th>Início</th><th>Abert. baú</th><th>Fecha. baú</th><th>Fim</th></tr></thead>
+          <tbody id="tbodyHist"><tr><td colspan="8" class="empty">Nenhuma viagem encerrada ainda</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="panel"><h3 id="titRadar">Radar de eventos · desde 01:00</h3><div class="feed" id="feed"><div class="empty">Aguardando pulso…</div></div></div>
+  </div>
+  <div class="ticker"><div class="ticker-track" id="ticker"></div></div>
+</div>
+<script>
+const CONTROLE='https://docs.google.com/spreadsheets/d/19ztgd86-ivwJveXp0Q_032P1fFaSuC9D9uaMJ4r6mP8/gviz/tq?tqx=out:csv&gid=1559964021';
+const TRUCKS='https://docs.google.com/spreadsheets/d/1TtgHyiAFdj1jCZGfm4VYzqw-4bEluQ34c95cYH_M6OA/gviz/tq?tqx=out:csv&gid=149639861';
+function agoraBRT(){return new Date(new Date().toLocaleString('en-US',{timeZone:'America/Sao_Paulo'}));}
+function isoOperacional(){const d=agoraBRT();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function isoOntem(){const d=agoraBRT();d.setDate(d.getDate()-1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function evNome(ev){return String(ev||'').toUpperCase().replace(/\s+/g,'_');}
+function ehFimReal(ev){ev=evNome(ev);return ev==='FIM_VIAGEM'||ev==='FIM_FINAL'||ev.indexOf('FIM_CD')>=0||ev==='HT_FIM_CD'||ev.indexOf('FIM CD')>=0;}
+function ehFimLojaMacro(ev){ev=evNome(ev);return ev.indexOf('FIM_LOJA')>=0||ev.indexOf('FIM_MACRO')>=0||ev.indexOf('LS_FIM')>=0||ev.indexOf('CV_FIM_LOJA')>=0;}
+function aindaNaRua(ev){ev=evNome(ev);return ['INICIO_VIAGEM','REINICIO_VIAGEM','CHEGADA_CLIENTE','ABERTURA_BAU','INICIO_DESCARREGAMENTO','RETORNO','PARADA_REFEICAO'].includes(ev);}
+function eventoRecente(hora, maxMin){
+  const n=horaNum(hora); if(n<0) return false;
+  const a=agoraBRT(); const now=a.getHours()*60+a.getMinutes();
+  let d=now-n; if(d<0) d+=1440;
+  return d<=(maxMin||180);
+}
+function placaEncerrada(lista, dest){
+  if(destEncerrado(dest)) return true;
+  const evs=(lista||[]).map(e=>evNome(e.ev));
+  const last=evs[evs.length-1]||'';
+  if(ehFimReal(last)) return true;
+  const iFim=evs.reduce((a,e,i)=> (e==='FIM_VIAGEM'||e==='FIM_FINAL'||e.indexOf('FIM_VIAGEM')>=0)?i:a, -1);
+  const iIni=evs.reduce((a,e,i)=> (e==='INICIO_VIAGEM'||e==='REINICIO_VIAGEM')?i:a, -1);
+  if(iFim>=0 && iFim>=iIni) return true;
+  return false;
+}
+function soMadrugada(){return agoraBRT().getHours()<8;}
+function destEncerrado(d){d=String(d||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');return /GARAGEM MANUTEN|MANUTENCAO/.test(d);}
+function horaNum(h){const m=String(h||'').match(/(\d{1,2}):(\d{2})/);return m?Number(m[1])*60+Number(m[2]):-1;}
+function br(iso){const[y,m,d]=iso.split('-');return d+'/'+m+'/'+y;}
+function parseCsv(text){const rows=[];let row=[],cell='',q=false;for(let i=0;i<text.length;i++){const c=text[i];if(q){if(c==='"'){if(text[i+1]==='"'){cell+='"';i++;}else q=false;}else cell+=c;}else if(c==='"')q=true;else if(c===','){row.push(cell);cell='';}else if(c==='\n'){row.push(cell);rows.push(row);row=[];cell='';}else if(c!=='\r')cell+=c;}if(cell||row.length){row.push(cell);rows.push(row);}return rows;}
+function extrairPlaca(v){const limpo=String(v||'').toUpperCase().replace(/[^A-Z0-9]/g,'');const m=limpo.match(/([A-Z]{3}\d[A-Z0-9]\d{2}|[A-Z]{3}\d{4})/);return m?m[1]:limpo;}
+function hh(v){const m=String(v||'').match(/(\d{1,2}:\d{2})/);return m?m[1].padStart(5,'0'):'';}
+function dataBate(cell,iso){const p=String(iso||'').split('-');if(p.length!==3)return false;const alvos=[p[2]+'/'+p[1]+'/'+p[0],p[2]+'/'+p[1]+'/'+p[0].slice(2),iso];const d=String(cell||'').trim();return alvos.some(a=>d===a||d.indexOf(a)===0);}
+function opClass(op){const o=String(op||'').toUpperCase();if(o==='TL')return 'p-tl';if(o==='LS')return 'p-ls';if(o==='CV')return 'p-cv';if(o==='HT')return 'p-ht';return 'p-run';}
+function statusDe(evs, op, dest){const last=evs[evs.length-1]||{};const e=last.ev||'';if(e==='ABERTURA_BAU'||e==='INICIO_DESCARREGAMENTO')return['BAÚ ABERTO','p-loja'];if(e==='CHEGADA_CLIENTE')return['NA LOJA','p-loja'];if(ehFimLojaMacro(e))return['RETORNO CD','p-run'];if(e==='RETORNO')return['RETORNO CD','p-run'];if(e==='PARADA_REFEICAO')return['ALMOÇO','p-loja'];if(e.indexOf('FIM_CD')>=0||e==='HT_FIM_CD')return['FIM','p-off'];if((e==='FIM_VIAGEM'||e==='FIM_FINAL') && destEhCd(dest||destDoDetalhe(last.det))) return['FIM','p-off'];if((e==='FIM_VIAGEM'||e==='FIM_FINAL') && opTrocaMacro(op) && !destEhCd(dest||destDoDetalhe(last.det))) return['RETORNO CD','p-run'];if(ehFimReal(e)||e==='FIM_VIAGEM'||e==='FIM_FINAL')return['FIM','p-off'];if(e==='INICIO_VIAGEM'||e==='REINICIO_VIAGEM'){const prev=(evs||[]).slice(0,-1).reverse().find(x=>x); const pe=prev&&evNome(prev.ev)||''; if(destEhCd(dest)||destEhCd(destDoDetalhe(last.det))||ehFimLojaMacro(pe)||pe==='FIM_VIAGEM'||pe==='FIM_FINAL'||pe==='RETORNO') return ['RETORNO CD','p-run']; return['EM VIAGEM','p-ok'];}return[e||'SINAL','p-run'];}
+function destDoDetalhe(det){
+  let t=String(det||'').replace(/\n/g,' ').replace(/SENHA\s*:\s*\S+/gi,' ').replace(/\s+/g,' ').trim();
+  let m=t.match(/DESTINO\s*:\s*([^|]+)/i);
+  if(m){
+    let d=m[1].replace(/SENHA\s*:\s*\S+/gi,'').trim();
+    d=d.replace(/^(INICIO|REINICIO)\s+DE\s+VIAGEM:?/i,'').trim();
+    if(d) return d;
+  }
+  m=t.match(/NOME\s*:\s*([^|]+)/i);
+  if(m){
+    let d=m[1].replace(/SENHA\s*:\s*\S+/gi,'').trim();
+    if(d) return d;
+  }
+  if(/retornando ao cd|retornando à base|retornando a base/i.test(t)) return 'CD / BASE';
+  return '';
+}
+function destPreferido(info, lista, last){
+  const evs=lista||[];
+  const lastDet=last&&last.det||'';
+  if(last && (ehFimLojaMacro(last.ev) || last.ev==='RETORNO' || last.ev==='FIM_VIAGEM' || last.ev==='FIM_FINAL')){
+    const cd=((info&&info.dests)||[]).find(d=>destEhCd(d));
+    const dLog=destDoDetalhe(lastDet);
+    if(dLog && destEhCd(dLog)) return dLog;
+    if(cd) return cd;
+    if(last.ev==='RETORNO' || ehFimLojaMacro(last.ev)) return dLog && destEhCd(dLog) ? dLog : (cd||'CD / BASE');
+  }
+  const d1=destDoDetalhe(lastDet);
+  if(d1) return d1;
+  for(let i=evs.length-1;i>=0;i--){
+    const d=destDoDetalhe(evs[i].det);
+    if(d) return d;
+  }
+  const blob=evs.map(e=>String(e.det||'')).join(' ')+' '+lastDet;
+  if(/DESTINO\s*:\s*CD|RETORNANDO AO CD|\bCD GB\b|GARAGEM/i.test(blob)){
+    const cd=((info&&info.dests)||[]).find(d=>/CD|GARAGEM|QUEIMAD|BASE/i.test(d||''));
+    if(cd) return cd;
+    return 'CD / BASE';
+  }
+  return destDaViagem(info, lista);
+}
+function destEhCd(d){return /\bCD\b|BASE|JUANIL|GARAGEM|QUEIMAD|HORTIFRUTI|\bLASA\b|LOGINHA/.test(String(d||'').toUpperCase());}
+function opTrocaMacro(op){const o=String(op||'').toUpperCase(); return o==='CV'||o==='LS'||o==='HT';}
+function fimEhFinal(op, dest, ev, lista){
+  ev=evNome(ev);
+  if(ehFimLojaMacro(ev)) return false;
+  if(ev.indexOf('FIM_CD')>=0 || ev==='HT_FIM_CD') return true;
+  if(ev!=='FIM_VIAGEM' && ev!=='FIM_FINAL') return false;
+  if(destEhCd(dest)) return true;
+  if(!opTrocaMacro(op)) return true;
+  const blob=(lista||[]).map(e=>String(e.det||'')+' '+e.ev).join(' ');
+  if(/IGNORA_CD|SEM_LANC|RETORNANDO AO CD|DESTINO\s*:\s*CD/i.test(blob) && !destEhCd(dest)) return false;
+  return destEhCd(dest);
+}
+function destDaViagem(info, lista){
+  const dests=(info&&info.dests&&info.dests.length)?info.dests:((info&&info.dest)?[info.dest]:[]);
+  if(!dests.length) return '';
+  const nFim=(lista||[]).filter(e=>e.ev==='FIM_VIAGEM').length;
+  const i=Math.min(nFim, dests.length-1);
+  return dests[i]||dests[0]||'';
+}
+function rotuloEv(ev,det){const e=evNome(ev);const d=String(det||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');if(e==='REINICIO_VIAGEM'||d.indexOf('REINICIO')>=0)return 'REINÍCIO DE VIAGEM';if(e==='INICIO_VIAGEM')return 'INÍCIO DE VIAGEM';return String(ev||'').replace(/_/g,' ');}
+function clsEv(ev){if(ev.includes('BAU')||ev.includes('DESCARREG'))return 'e-bau';if(ev.includes('FIM'))return 'e-fim';if(ev.includes('INICIO'))return 'e-ini';if(ev.includes('RETORNO')||ev.includes('REFEICAO'))return 'e-ret';return 'e-cli';}
+async function pull(url){const r=await fetch(url+'&_='+Date.now(),{cache:'no-store'});return parseCsv(await r.text());}
+let DATA_ISO = '';
+function consultarData(){
+  const v=document.getElementById('fData').value;
+  if(v) DATA_ISO=v;
+  carregar();
+}
+function voltarHoje(){
+  DATA_ISO=isoOperacional();
+  const el=document.getElementById('fData');
+  if(el) el.value=DATA_ISO;
+  carregar();
+}
+async function carregar(){
+  const iso=isoOperacional(), alvo=br(iso);
+  document.getElementById('subtitulo').textContent='Dia operacional '+alvo+' · Controle + Trucks';
+  let log=[],ctrl=[];
+  try{log=await pull(TRUCKS);}catch(e){}
+  try{ctrl=await pull(CONTROLE);}catch(e){}
+  const ontem=br(isoOntem());
+  const alvos=agoraBRT().getHours()<8 ? [alvo,ontem] : [alvo];
+  const evs=[];
+  for(let i=1;i<log.length;i++){
+    const r=log[i]; if(!r||!r[0]) continue;
+    const dia=String(r[0]);
+    if(!alvos.some(a=>dia.indexOf(a)===0)) continue;
+    const ev=String(r[1]||'').toUpperCase(); const pl=extrairPlaca(r[2]); if(!pl) continue;
+    if(['CRIOU','AUTO_CRIOU','ATUALIZOU','REFEICAO_SEM_MOT','REFEICAO_AUTO','REFEICAO_JA_OK','REFEICAO_ERRO'].includes(ev)) continue;
+    if(ev==='IGNORA_CD'||ev==='SEM_LANC'){
+      const det=String(r[3]||'');
+      if(/INICIO|REINICIO|DESTINO|CD/i.test(det)){
+        evs.push({ev:'RETORNO',placa:pl,hora:hh(r[3])||hh(r[0]),det:det,dia:dia.slice(0,10),hoje:dia.indexOf(alvo)===0,ts:dia});
+      }
+      continue;
+    }
+    evs.push({ev,placa:pl,hora:hh(r[3])||hh(r[0]),det:String(r[3]||''),dia:dia.slice(0,10),hoje:dia.indexOf(alvo)===0,ts:dia});
+  }
+  const h=(ctrl[0]||[]).map(x=>String(x).trim().toUpperCase().replace(/"/g,''));
+  let iData=h.indexOf('DATA'); if(iData<0) iData=0;
+  const iOp=h.indexOf('OP')<0?2:h.indexOf('OP');
+  const iV=Math.max(h.findIndex(x=>x.includes('VEIC')),3);
+  const iMot=h.indexOf('MOTORISTA')<0?4:h.indexOf('MOTORISTA');
+  const iDest=h.indexOf('DESTINO');
+  const mapaCtrl={};
+  for(let i=1;i<ctrl.length;i++){
+    const r=ctrl[i]; if(!r) continue;
+    if(!(dataBate(r[iData],iso)||(agoraBRT().getHours()<8 && dataBate(r[iData],isoOntem())))) continue;
+    const pl=extrairPlaca(r[iV]); if(!pl) continue;
+    const dest=iDest>=0?String(r[iDest]||'').trim():'';
+    const nxt={op:String(r[iOp]||'').trim().toUpperCase(),mot:String(r[iMot]||'').trim(),dest:dest,dests: dest?[dest]:[]};
+    const prev=mapaCtrl[pl];
+    if(!prev) mapaCtrl[pl]=nxt;
+    else {
+      if(nxt.op) prev.op=nxt.op;
+      if(nxt.mot) prev.mot=nxt.mot;
+      if(dest){ prev.dests=prev.dests||[]; prev.dests.push(dest); prev.dest=dest; }
+    }
+  }
+  const por={}; evs.forEach(e=>{(por[e.placa]=por[e.placa]||[]).push(e);});
+  Object.keys(por).forEach(pl=>{
+    const lista=por[pl];
+    const last=lista[lista.length-1];
+    const temHoje=lista.some(e=>e.hoje);
+    if(!temHoje){
+      if(ehFimReal(last.ev)) { delete por[pl]; return; }
+      if(lista.some(e=>e.ev==='FIM_VIAGEM'||e.ev==='FIM_FINAL') && !lista.some((e,i,a)=>{
+        const lastFim=a.map((x,ix)=> (x.ev==='FIM_VIAGEM'||x.ev==='FIM_FINAL')?ix:-1).filter(n=>n>=0).pop();
+        return (e.ev==='INICIO_VIAGEM'||e.ev==='REINICIO_VIAGEM') && i>lastFim;
+      })) { delete por[pl]; return; }
+      const dest=((mapaCtrl[pl]||{}).dest||'');
+      if(destEncerrado(dest)) { delete por[pl]; return; }
+      if(ehFimLojaMacro(last.ev) && horaNum(last.hora)>=0 && horaNum(last.hora)<18*60) { delete por[pl]; return; }
+      if(!aindaNaRua(last.ev)) { delete por[pl]; return; }
+    }
+  });
+  const evsVivos=[]; Object.keys(por).forEach(pl=>por[pl].forEach(e=>evsVivos.push(e)));
+
+  const placas=Object.keys(por).sort((a,b)=>((mapaCtrl[a]||{}).mot||a).localeCompare((mapaCtrl[b]||{}).mot||b,'pt-BR'));
+  CACHE={placas,evs:evsVivos||evs,todos:evs,mapaCtrl};
+  pintar();
+}
+
+let FILTRO_OP = '';
+try{ FILTRO_OP = localStorage.getItem('cco_filtro_op') || ''; }catch(e){}
+let CACHE = {placas:[], evs:[], todos:[], mapaCtrl:{}};
+function histKey(o){return [o.placa,o.hora].join('|');}
+function loadHist(iso){
+  try{const a=JSON.parse(localStorage.getItem('cco_hist_'+iso)||'[]'); return Array.isArray(a)?a:[];}catch(e){return [];}
+}
+function saveHist(iso, arr){
+  try{localStorage.setItem('cco_hist_'+iso, JSON.stringify(arr.slice(-80)));}catch(e){}
+}
+function horaEv(lista, nomes, depoisDe){
+  const ok=nomes.map(evNome);
+  let ini=depoisDe|| -1;
+  for(let i=0;i<(lista||[]).length;i++){
+    if(i<=ini) continue;
+    if(ok.includes(evNome(lista[i].ev))) return lista[i].hora||'';
+  }
+  return '';
+}
+function registrarHist(pl, info, lista){
+  const fims=(lista||[]).filter(e=>e.ev==='FIM_VIAGEM');
+  if(!fims.length) return;
+  const lastF=fims[fims.length-1];
+  const destChk=destPreferido(info,lista,lastF);
+  if(ehFimLojaMacro(lastF.ev)) return;
+  if(!fimEhFinal(info.op, destChk, lastF.ev, lista) && !destEhCd(destChk)) return;
+  const iFim=(lista||[]).lastIndexOf(lastF);
+  let iIni=-1;
+  (lista||[]).forEach((e,i)=>{ if((e.ev==='INICIO_VIAGEM'||e.ev==='REINICIO_VIAGEM') && i<iFim) iIni=i; });
+  const trecho=(lista||[]).slice(Math.max(0,iIni), iFim+1);
+  const dest=destPreferido(info,trecho,lastF);
+  if(String(lastF.dia||'') && String(lastF.dia)!==br(DATA_ISO) && String(lastF.dia)!==DATA_ISO) return;
+  const rec={
+    placa:pl,op:info.op||'',mot:info.mot||'',dest:dest||destChk||'',
+    ev:lastF.ev,hora:lastF.hora||'',
+    ini:horaEv(trecho,['INICIO_VIAGEM','REINICIO_VIAGEM']),
+    bau:horaEv(trecho,['ABERTURA_BAU','INICIO_DESCARREGAMENTO']),
+    fecha:horaEv(trecho,['FECHAMENTO_BAU']),
+    dia:br(DATA_ISO)
+  };
+  const hist=loadHist(DATA_ISO);
+  if(hist.some(h=>histKey(h)===histKey(rec))) return;
+  hist.push(rec); saveHist(DATA_ISO, hist);
+}
+
+function aplicarFiltro(op){
+  FILTRO_OP = op || '';
+  try{ localStorage.setItem('cco_filtro_op', FILTRO_OP); }catch(e){}
+  renderFiltros();
+  pintar();
+}
+function renderFiltros(){
+  const box = document.getElementById('filtros');
+  if(!box) return;
+  box.innerHTML = ['','TL','LS','CV','HT'].map(o => {
+    const lab = o || 'TODAS';
+    return '<button class="'+(FILTRO_OP===o?'on':'')+'" onclick="aplicarFiltro(\''+o+'\')">'+lab+'</button>';
+  }).join('');
+}
+function passaOp(info){
+  if(!FILTRO_OP) return true;
+  return String((info||{}).op||'').toUpperCase()===FILTRO_OP;
+}
+function pintar(){
+  const mapaCtrl=CACHE.mapaCtrl||{};
+  const evs=(CACHE.evs||[]).filter(e => passaOp(mapaCtrl[e.placa]));
+  const placas=(CACHE.placas||[]).filter(pl => passaOp(mapaCtrl[pl]));
+  const por={}; evs.forEach(e=>{(por[e.placa]=por[e.placa]||[]).push(e);});
+  Object.keys(por).forEach(pl=>{
+    const lista=por[pl];
+    const last=lista[lista.length-1];
+    const temHoje=lista.some(e=>e.hoje);
+    if(!temHoje){
+      if(ehFimReal(last.ev)) { delete por[pl]; return; }
+      if(lista.some(e=>e.ev==='FIM_VIAGEM'||e.ev==='FIM_FINAL') && !lista.some((e,i,a)=>{
+        const lastFim=a.map((x,ix)=> (x.ev==='FIM_VIAGEM'||x.ev==='FIM_FINAL')?ix:-1).filter(n=>n>=0).pop();
+        return (e.ev==='INICIO_VIAGEM'||e.ev==='REINICIO_VIAGEM') && i>lastFim;
+      })) { delete por[pl]; return; }
+      const dest=((mapaCtrl[pl]||{}).dest||'');
+      if(destEncerrado(dest)) { delete por[pl]; return; }
+      if(ehFimLojaMacro(last.ev) && horaNum(last.hora)>=0 && horaNum(last.hora)<18*60) { delete por[pl]; return; }
+      if(!aindaNaRua(last.ev)) { delete por[pl]; return; }
+    }
+  });
+  const evsVivos=[]; Object.keys(por).forEach(pl=>por[pl].forEach(e=>evsVivos.push(e)));
+
+  let algumNaRua=false;
+  Object.keys(por).forEach(pl=>{
+    const lista=por[pl]||[];
+    const last=lista[lista.length-1];
+    const info=mapaCtrl[pl]||{};
+    registrarHist(pl, info, lista);
+    if(last && (aindaNaRua(last.ev)||last.ev==='RETORNO'||(ehFimLojaMacro(last.ev)&&eventoRecente(last.hora,120))) && !placaEncerrada(lista,info.dest)) algumNaRua=true;
+  });
+  let viagem=0,loja=0,bau=0,fim=0,alm=0; const linhas=[];
+  placas.forEach(pl=>{
+    const lista=por[pl]||[]; if(!lista.length) return;
+    const last=lista[lista.length-1]||{};
+    const destNow0=destPreferido(mapaCtrl[pl]||{},lista,last);
+    const final=fimEhFinal((mapaCtrl[pl]||{}).op, destNow0, last.ev, lista);
+    const destCd=destEhCd(destNow0||destDoDetalhe(last.det));
+    const indoCd = last.ev==='RETORNO' || ((last.ev==='INICIO_VIAGEM'||last.ev==='REINICIO_VIAGEM') && destCd);
+    const vivo= !fimEhFinal((mapaCtrl[pl]||{}).op, destNow0, last.ev, lista) && (
+      indoCd ||
+      (ehFimLojaMacro(last.ev) && eventoRecente(last.hora,90)) ||
+      (aindaNaRua(last.ev) && eventoRecente(last.hora,90) && last.ev!=='INICIO_VIAGEM' && last.ev!=='REINICIO_VIAGEM')
+    );
+    if(!vivo) return;
+    const jaFim=loadHist(DATA_ISO).some(h=>h.placa===pl && (h.hora||'')>=(last.hora||''));
+    if(jaFim && destEhCd(destNow0)) return;
+    const [st,cls]=lista.length?statusDe(lista,(mapaCtrl[pl]||{}).op,destNow0):['NO CONTROLE','p-run'];
+    if(st==='EM VIAGEM'||st==='RETORNO CD') viagem++;
+    if(st==='NA LOJA') loja++;
+    if(st==='BAÚ ABERTO'){bau++;loja++;}
+    if(st==='FIM') fim++; if(st==='ALMOÇO') alm++;
+    const info=mapaCtrl[pl]||{};
+    const destNow=destPreferido(info,lista,last);
+    linhas.push('<tr><td style="font-weight:800">'+pl+'</td><td>'+(info.op?'<span class="pill '+opClass(info.op)+'">'+info.op+'</span>':'—')+'</td><td>'+(info.mot||'—')+'</td><td>'+(destNow||'—')+'</td><td>'+(st==='RETORNO CD'?'RETORNO CD':(last.ev?rotuloEv(last.ev,last.det):'—'))+'</td><td style="font-family:Share Tech Mono,monospace">'+(last.hora||'—')+'</td><td><span class="pill '+cls+'">'+st+'</span></td></tr>');
+  });
+  const tb=document.getElementById('tbody');
+  const html=linhas.join('')||'<tr><td colspan="7" class="empty">Aguardando saídas</td></tr>';
+  if(tb && tb.innerHTML!==html) tb.innerHTML=html;
+  Object.keys(por).forEach(pl=>{
+    const lista=por[pl]||[]; const info=mapaCtrl[pl]||{};
+    lista.filter(e=>e.ev==='FIM_VIAGEM'||e.ev==='HT_FIM_CD'||String(e.ev).indexOf('FIM_CD')>=0).forEach(lastF=>{
+      if(ehFimLojaMacro(lastF.ev)) return;
+      const dest=destPreferido(info,lista,lastF);
+      if(!(destEhCd(dest)||String(lastF.ev).indexOf('FIM_CD')>=0||lastF.ev==='HT_FIM_CD')) return;
+      registrarHist(pl, info, lista);
+    });
+  });
+  const hojeBr=br(DATA_ISO); const agoraMin=agoraBRT().getHours()*60+agoraBRT().getMinutes(); const histRaw=loadHist(DATA_ISO).filter(h=>passaOp({op:h.op}) && (!h.dia || h.dia===hojeBr || h.dia===DATA_ISO) && horaNum(h.hora)>=0 && horaNum(h.hora)<=agoraMin);
+  const seen={};
+  histRaw.forEach(h=>{
+    const k=histKey(h);
+    const cur=seen[k];
+    const score=(h.ini?2:0)+(/CD|GARAGEM|QUEIMAD|BASE/i.test(h.dest||'')?3:0)+(h.dest&&!/PETROPOLIS|PETRÓPOLIS/i.test(h.dest)?1:0);
+    const old=cur?((cur.ini?2:0)+(/CD|GARAGEM|QUEIMAD|BASE/i.test(cur.dest||'')?3:0)): -1;
+    if(!cur || score>=old) seen[k]=h;
+  });
+  const hist=Object.values(seen).filter(h=>!h.dia||h.dia===hojeBr||h.dia===DATA_ISO).sort((a,b)=>(b.hora||'').localeCompare(a.hora||'')); try{ const limpo=loadHist(DATA_ISO).filter(h=>!h.dia||h.dia===hojeBr||h.dia===DATA_ISO); if(limpo.length!==loadHist(DATA_ISO).length) saveHist(DATA_ISO, limpo); }catch(e){}
+  const hb=document.getElementById('tbodyHist');
+  const histHtml=hist.map(h=>'<tr><td style="font-weight:800">'+h.placa+'</td><td>'+(h.op?'<span class="pill '+opClass(h.op)+'">'+h.op+'</span>':'—')+'</td><td>'+(h.mot||'—')+'</td><td>'+(h.dest||'—')+'</td><td style="font-family:Share Tech Mono,monospace">'+(h.ini||'—')+'</td><td style="font-family:Share Tech Mono,monospace">'+(h.bau||'—')+'</td><td style="font-family:Share Tech Mono,monospace">'+(h.fecha||'—')+'</td><td style="font-family:Share Tech Mono,monospace">'+(h.hora||'—')+'</td></tr>').join('')||'<tr><td colspan="8" class="empty">Nenhuma viagem encerrada ainda</td></tr>';
+  if(hb && hb.innerHTML!==histHtml) hb.innerHTML=histHtml;
+  fim=Math.max(fim, hist.length);
+
+  const ativo = viagem+loja+bau+alm;
+  const sit=document.getElementById('situacao');
+  if(sit){
+    if(ativo>0) sit.innerHTML='<span class="pulse on">ONLINE</span><small>VEÍCULOS TRANSITANDO NO MOMENTO</small>';
+    else sit.innerHTML='<span class="pulse off">OFFLINE</span><small>OPERAÇÕES ENCERRADAS</small>';
+  }
+
+  const kpis=document.getElementById('kpis');
+  var kpiHtml='<div class="kpi"><div class="l">Sinais hoje</div><div class="n c-cyan">'+evs.length+'</div></div><div class="kpi"><div class="l">Em viagem / retorno</div><div class="n c-lime">'+viagem+'</div></div><div class="kpi"><div class="l">Na loja / baú</div><div class="n c-amber">'+loja+'</div></div><div class="kpi"><div class="l">Baú aberto</div><div class="n c-amber">'+bau+'</div></div><div class="kpi"><div class="l">Almoço</div><div class="n c-violet">'+alm+'</div></div><div class="kpi"><div class="l">Encerrados</div><div class="n c-red">'+fim+'</div></div>';
+  if(kpis && kpis.dataset.sig!==kpiHtml){ kpis.dataset.sig=kpiHtml; kpis.innerHTML=kpiHtml; }
+  const todos=(CACHE.todos&&CACHE.todos.length?CACHE.todos:evs).filter(e => passaOp(mapaCtrl[e.placa]) || !mapaCtrl[e.placa]);
+  const recent=todos.slice().sort(function(a,b){return String(b.ts||'').localeCompare(String(a.ts||''));});
+  const feed=recent.map(e=>{const info=mapaCtrl[e.placa]||{};return '<div class="ev '+clsEv(e.ev)+'"><span class="pl">'+e.placa+'</span><time>'+(e.hora||'--:--')+'</time><div><b>'+rotuloEv(e.ev,e.det)+'</b><small>'+(info.mot||'')+(info.op?' · '+info.op:'')+'</small></div></div>';}).join('')||'<div class="empty">Aguardando eventos</div>';
+  const fd=document.getElementById('feed');
+  const feedWrap='<div class="feed-track">'+feed+feed+'</div>';
+  if(fd && fd.dataset.sig!==feed){ fd.dataset.sig=feed; fd.innerHTML=feedWrap; }
+  const trk=fd&&fd.querySelector('.feed-track'); if(trk) trk.style.animationDuration=Math.max(90, recent.length*2.2)+'s';
+  const tr=document.getElementById('titRadar'); if(tr) tr.textContent='Radar de eventos · '+recent.length+' desde 01:00';
+  const ticks=recent.slice(0,50);
+  const tickHtml=ticks.map(e=>{const info=mapaCtrl[e.placa]||{};return '<span class="tick '+clsEv(e.ev)+'"><time>'+e.hora+'</time><b>'+rotuloEv(e.ev,e.det)+'</b> '+e.placa+(info.mot?' · '+info.mot:'')+(info.op?' · '+info.op:'')+'</span>';}).join('');
+  const tk=document.getElementById('ticker');
+  const next=(tickHtml+tickHtml)||'<span class="tick">Aguardando eventos…</span>';
+  if(tk && tk.dataset.sig!==next){ tk.dataset.sig=next; tk.innerHTML=next; }
+  if(tk) tk.style.animationDuration='150s';
+}
+function tick(){document.getElementById('relogio').textContent=agoraBRT().toLocaleTimeString('pt-BR');}
+async function hashTxt(t){
+  const buf=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(t));
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+const CCO_VER='20261001a';
+async function checarGithub(){
+  try{
+    const base=location.href.split('#')[0].split('?')[0];
+    const txt=await (await fetch(base+(base.slice(-1)==='/'?'index.html':'')+'?_gh='+Date.now(),{cache:'no-store'})).text();
+    const m=txt.match(/CCO_VER[:'"\s=]+([0-9a-zA-Z]+)/);
+    const rem=m?m[1]:'';
+    if(rem && rem!==CCO_VER){
+      const c=document.getElementById('swapCover');
+      if(c) c.style.display='block';
+      location.reload();
+    }
+  }catch(e){}
+}
+tick();setInterval(tick,1000);renderFiltros();
+checarGithub();setInterval(checarGithub,90000);
+
+(function(){ const el=document.getElementById('fData'); DATA_ISO=isoOperacional(); if(el) el.value=DATA_ISO; })();
+carregar();
+setInterval(function(){ if(DATA_ISO===isoOperacional()) carregar(); },10000);
+</script>
+</body>
+</html>
